@@ -57,7 +57,7 @@
     ; get current state
     (define/public (get-current-state) current-state)
     
-    ; add an action associated to a state
+    ; add an action to a state (before, on, after)
     (define/private (add-action state action action-list)
       (when (not (procedure? action))
         (error "add-action: action must be a procedure"))
@@ -68,6 +68,7 @@
               (hash-set! action-list state (cons (hash-ref action-list state) action))
               (hash-set! action-list state (list action)))
           (error "add-action: state is not part of possible states")))
+    
     ; add an on-state action
     (define/public (add-action-on-state state action)
       (add-action state action on-state-actions))
@@ -78,11 +79,22 @@
     (define/public (add-action-after-state state action)
       (add-action state action after-state-actions))
     
-    ; get on-state actions
-    (define/public (get-on-state-actions) on-state-actions)
-    ; get before-state actions
-    (define/public (get-before-state-actions) before-state-actions)
-    ; get after-state actions
-    (define/public (get-after-state-actions) after-state-actions)
+    ; get state actions for a particular state
+    (define/private (get-state-actions state action-list)
+      (if (is-state? state) 
+          (if (hash-has-key? action-list state)          
+              (hash-ref action-list state)
+              '())
+          (error "get-state-actions: state is not part of possible states")))
+    
+    ; get on state actions for a particular state
+    (define/public (get-on-state-actions state)
+      (get-state-actions state on-state-actions))
+    ; get before state actions for a particular state
+    (define/public (get-before-state-actions state)
+      (get-state-actions state before-state-actions))
+    ; get after state actions for a particular state
+    (define/public (get-after-state-actions state)
+      (get-state-actions state after-state-actions))
     
     ))
