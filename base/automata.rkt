@@ -1,5 +1,8 @@
 #lang racket 
 
+;
+(provide automata%)
+
 ; definition d'un automate à états
 (define automata%
   (class object% 
@@ -83,8 +86,3 @@
     (define/public (get-after-state-actions) after-state-actions)
     
     ))
-
-;;; tests
-(define a (new automata% [the-states '(red green blue)] [the-initial-state 'red] [the-final-states '(blue)]))
-(send a add-action-on-state 'blue (lambda (x) '()))
-(send a get-on-state-actions)
