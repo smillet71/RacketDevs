@@ -57,6 +57,8 @@
     ; get current state
     (define/public (get-current-state) current-state)
     
+    ; gestion des action sur les états
+    
     ; add an action to a state (before, on, after)
     (define/private (add-action state action action-list)
       (when (not (procedure? action))
@@ -96,5 +98,29 @@
     ; get after state actions for a particular state
     (define/public (get-after-state-actions state)
       (get-state-actions state after-state-actions))
+    
+    ; add a transition between 2 states
+    (define/public (add-transition from-state to-state on-condition)
+      (when (not (procedure? on-condition))
+        (error "add-transition: action must be a procedure"))
+      (when (not (equal? (procedure-arity on-condition) 1))
+        (error "add-transition: action must be a procedure with 1 argument"))
+      (if (and (is-state? from-state) (is-state? to-state) (not (member from-state final-states)))
+          (if (hash-has-key? transitions from-state)
+              (let ((h (hash-ref transitions from-state)))
+                (hash-set! h to-state on-condition))
+              (let ((h (make-hash)))
+                (hash-set! h to-state on-condition)
+                (hash-set! transitions from-state h)))
+          (error "add-transition: incorrect arguments")))
+    
+    ; access to defined transitions
+    (define/public (get-transitions-from state)
+      (if (is-state? state) 
+          (if (hash-has-key? transitions state)          
+               (hash-ref transitions state)
+              '())
+          (error "get-transitions-from: state is not part of possible states")))
+     
     
     ))
