@@ -150,7 +150,7 @@
         (let ((list-of-actions (hash-ref state-actions current-state)))
           (for ([action list-of-actions])
             (action context)))))
-
+    
     ; execute actions associated with current state test transitions
     (define/public (step context) 
       ; execute before state actions ?
