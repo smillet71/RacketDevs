@@ -19,6 +19,8 @@
       (if (member the-initial-state states)           
           the-initial-state
           (error "instantiate: initial state can't be part of final states")))
+    ; previous state 
+    (define previous-state initial-state)
     ; final states 
     (define final-states 
       (begin
@@ -76,9 +78,13 @@
       (add-action state action on-state-actions))
     ; add a before-state action
     (define/public (add-action-before-state state action)
+      (when (equal? initial-state state)
+        (error "add-action-before-state: can't add an action to be executed before initial state"))
       (add-action state action before-state-actions))
     ; add an after-state action
     (define/public (add-action-after-state state action)
+      (when (member state final-states)
+        (error "add-action-after-state can't add an action to be executed after a final state"))
       (add-action state action after-state-actions))
     
     ; get state actions for a particular state
@@ -99,6 +105,8 @@
     (define/public (get-after-state-actions state)
       (get-state-actions state after-state-actions))
     
+    ; transitions' management 
+    
     ; add a transition between 2 states
     (define/public (add-transition from-state to-state on-condition)
       (when (not (procedure? on-condition))
@@ -118,9 +126,52 @@
     (define/public (get-transitions-from state)
       (if (is-state? state) 
           (if (hash-has-key? transitions state)          
-               (hash-ref transitions state)
+              (hash-ref transitions state)
               '())
           (error "get-transitions-from: state is not part of possible states")))
-     
     
+    ; execution management
+    
+    ; force a particular state
+    (define/public (force-state state) 
+      (if (is-state? state) 
+          (begin (set! current-state state) 
+                 (set! previous-state state))
+          (error "get-transitions-from: state is not part of possible states")))
+    
+    ; force initial state
+    (define/public (init) 
+      (set! current-state initial-state) 
+      (set! previous-state initial-state))
+    
+    ; execute actions before/on/after a state
+    (define/private (execute-actions context state-actions)
+      (when (hash-has-key? state-actions current-state)          
+        (let ((list-of-actions (hash-ref state-actions current-state)))
+          (for ([action list-of-actions])
+            (action context)))))
+
+    ; execute actions associated with current state test transitions
+    (define/public (step context) 
+      ; execute before state actions ?
+      (when (not (equal? previous-state current-state))
+        (execute-actions context on-state-actions)
+        (set! previous-state current-state))
+      ; execute actions on current state
+      (execute-actions context on-state-actions)
+      ; test transitions
+      (let ((list-transitions (get-transitions-from current-state))
+            (finished #f))
+        (when (not (null? list-transitions))
+          (for ([ transition (hash->list list-transitions)] #:when (not finished))
+            (let* ((to-state (car transition))
+                   (condition (cdr transition))
+                   (transition-ok (condition context)))
+              (when transition-ok
+                (begin
+                  (execute-actions context after-state-actions)
+                  (set! previous-state current-state)
+                  (set! current-state to-state)
+                  (set! finished #t))))))) 
+      )
     ))

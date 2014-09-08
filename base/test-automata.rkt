@@ -15,6 +15,9 @@
 (define (action-ok x) '())
 (define (condition-ok x) '())
 (define (condition-fail) '())
+(define (red-to-green context) #t)
+(define (red-to-blue context) #f)
+(define (red-to-yellow context) #f)
 
 ;; automata tests
 (test/gui 
@@ -58,9 +61,9 @@
   
   (test-case "add an action on an existing state"
              (let ((a (automaton '(red green blue) 'red '(green))))
-               (check-not-exn (lambda () (send a add-action-on-state 'red action-ok)))
-               (check-equal? 1 (length (send a get-on-state-actions 'red)))
-               (check-equal? 0 (length (send a get-on-state-actions 'green)))
+               (check-not-exn (lambda () (send a add-action-on-state 'green action-ok)))
+               (check-equal? 1 (length (send a get-on-state-actions 'green)))
+               (check-equal? 0 (length (send a get-on-state-actions 'red)))
                (check-equal? 0 (length (send a get-on-state-actions 'blue)))
                (check-exn exn:fail? 
                           (lambda () (send a get-on-state-actions 'yellow)))
@@ -73,15 +76,19 @@
                (check-equal? 0 (length (send a get-before-state-actions 'red)))
                (check-equal? 0 (length (send a get-before-state-actions 'blue)))
                (check-exn exn:fail? 
+                          (lambda () (send a add-action-before-state 'red action-ok)))
+               (check-exn exn:fail? 
                           (lambda () (send a get-before-state-actions 'yellow)))
                ))
   
   (test-case "add an action after an existing state"
              (let ((a (automaton '(red green blue) 'red '(green))))
-               (check-not-exn (lambda () (send a add-action-after-state 'blue action-ok)))
-               (check-equal? 1 (length (send a get-after-state-actions 'blue)))
-               (check-equal? 0 (length (send a get-after-state-actions 'red)))
+               (check-not-exn (lambda () (send a add-action-after-state 'red action-ok)))
+               (check-equal? 1 (length (send a get-after-state-actions 'red)))
+               (check-equal? 0 (length (send a get-after-state-actions 'blue)))
                (check-equal? 0 (length (send a get-after-state-actions 'green)))
+               (check-exn exn:fail? 
+                          (lambda () (send a add-action-after-state 'green action-ok)))
                (check-exn exn:fail? 
                           (lambda () (send a get-after-state-actions 'yellow)))
                ))
@@ -103,4 +110,32 @@
                (check-equal? '() (send a get-transitions-from 'green))
                (check-equal? '() (send a get-transitions-from 'blue))
                ))
+  
+  (test-case "test force-state and init method"
+             (let ((a (automaton '(red green blue) 'red '(green))))
+               (send a force-state 'green)
+               (check-equal? 'green (send a get-current-state))
+               (send a init)
+               (check-equal? 'red (send a get-current-state))
+               ))
+
+  (test-case "test execution"
+             (let* ((a (automaton '(red green blue yellow) 'red '(green)))
+                   (count 0)
+                   (redp (lambda (context) (set! count 1)))
+                   (greenp (lambda (context) (set! count (+ count 1)))))
+               (send a add-transition 'red 'green red-to-blue)
+               (send a add-transition 'red 'blue red-to-green)
+               (send a add-transition 'red 'yellow red-to-yellow)
+               (send a add-action-on-state 'red redp)
+               (send a add-action-after-state 'red greenp)
+               (send a add-action-before-state 'green greenp)
+               (send a add-action-on-state 'green greenp)
+               (send a step '())
+               (check-equal? count 2)
+               (send a step '())
+               (check-equal? count 4)
+               (send a step '())
+               (check-equal? count 5)))
+                
   ))
