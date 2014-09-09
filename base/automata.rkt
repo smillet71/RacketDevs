@@ -75,6 +75,8 @@
     
     ; add an on-state action
     (define/public (add-action-on-state state action)
+      (when (member state final-states)
+        (error "add-action-on-state can't add an action on a final state"))
       (add-action state action on-state-actions))
     ; add a before-state action
     (define/public (add-action-before-state state action)
@@ -153,25 +155,26 @@
     
     ; execute actions associated with current state test transitions
     (define/public (step context) 
-      ; execute before state actions ?
-      (when (not (equal? previous-state current-state))
+      (when (not (member current-state final-states))
+        ; execute before state actions ?
+        (when (not (equal? previous-state current-state))
+          (execute-actions context on-state-actions)
+          (set! previous-state current-state))
+        ; execute actions on current state
         (execute-actions context on-state-actions)
-        (set! previous-state current-state))
-      ; execute actions on current state
-      (execute-actions context on-state-actions)
-      ; test transitions
-      (let ((list-transitions (get-transitions-from current-state))
-            (finished #f))
-        (when (not (null? list-transitions))
-          (for ([ transition (hash->list list-transitions)] #:when (not finished))
-            (let* ((to-state (car transition))
-                   (condition (cdr transition))
-                   (transition-ok (condition context)))
-              (when transition-ok
-                (begin
-                  (execute-actions context after-state-actions)
-                  (set! previous-state current-state)
-                  (set! current-state to-state)
-                  (set! finished #t))))))) 
-      )
+        ; test transitions
+        (let ((list-transitions (get-transitions-from current-state))
+              (finished #f))
+          (when (not (null? list-transitions))
+            (for ([ transition (hash->list list-transitions)] #:when (not finished))
+              (let* ((to-state (car transition))
+                     (condition (cdr transition))
+                     (transition-ok (condition context)))
+                (when transition-ok
+                  (begin
+                    (execute-actions context after-state-actions)
+                    (set! previous-state current-state)
+                    (set! current-state to-state)
+                    (set! finished #t))))))) 
+        ))
     ))

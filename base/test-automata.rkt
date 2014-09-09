@@ -2,7 +2,8 @@
 
 (require rackunit rackunit/gui
          "automata.rkt")
-
+;
+(provide automata-test-suite)
 
 ; automata creation
 (define (automaton states istate fstates)
@@ -20,7 +21,7 @@
 (define (red-to-yellow context) #f)
 
 ;; automata tests
-(test/gui 
+(define automata-test-suite
  (test-suite 
   "test-automata"
   
@@ -61,10 +62,10 @@
   
   (test-case "add an action on an existing state"
              (let ((a (automaton '(red green blue) 'red '(green))))
-               (check-not-exn (lambda () (send a add-action-on-state 'green action-ok)))
-               (check-equal? 1 (length (send a get-on-state-actions 'green)))
+               (check-not-exn (lambda () (send a add-action-on-state 'blue action-ok)))
+               (check-equal? 1 (length (send a get-on-state-actions 'blue)))
                (check-equal? 0 (length (send a get-on-state-actions 'red)))
-               (check-equal? 0 (length (send a get-on-state-actions 'blue)))
+               (check-equal? 0 (length (send a get-on-state-actions 'green)))
                (check-exn exn:fail? 
                           (lambda () (send a get-on-state-actions 'yellow)))
                ))
@@ -120,7 +121,7 @@
                ))
 
   (test-case "test execution"
-             (let* ((a (automaton '(red green blue yellow) 'red '(green)))
+             (let* ((a (automaton '(red green blue yellow pink) 'red '(pink)))
                    (count 0)
                    (redp (lambda (context) (set! count 1)))
                    (greenp (lambda (context) (set! count (+ count 1)))))
