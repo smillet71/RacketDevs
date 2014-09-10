@@ -1,3 +1,5 @@
 #lang racket
 
-(require "base/automata.rkt")
+(require "version.rkt"
+         "gui/gui.rkt"
+         "base/automata.rkt")

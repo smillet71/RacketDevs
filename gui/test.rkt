@@ -1,7 +1,12 @@
 #lang racket/gui
 
 ; Make a frame by instantiating the frame% class 
-(define frame (new frame% [label "Example"]))   
+(define frame 
+  (new frame% 
+       [label "Example"]
+       [style (list 'no-caption 'no-system-menu)]
+       ))   
+
 ; Make a static text message in the frame 
 (define msg (new message% [parent frame]                           
                  [label "No events so far..."]))   
@@ -35,4 +40,7 @@
        (send dc draw-text "Don't Panic!" 0 0))]) 
 
 ; Show the frame by calling its show method 
+(send frame maximize #t)
+(send frame fullscreen #t)
 (send frame show #t) 
+
