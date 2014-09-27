@@ -1,7 +1,11 @@
 #lang racket
 
 (require rackunit rackunit/gui
-         "test-automata.rkt")
+         "./base/test-automata.rkt"
+         "./base/test-component.rkt"
+         "./base/test-databus.rkt")
 
 ;
-(test/gui automata-test-suite)
+(test/gui automata-test-suite
+          component-test-suite
+          databus-test-suite)
