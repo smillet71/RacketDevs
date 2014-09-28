@@ -22,10 +22,10 @@
     
     ; accessors ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     (define/public (get-topics) topics)
-    (define/public (get-topic topic) 
+    (define/public (has-topic topic) 
       (if (hash-has-key? topics topic)
-          (hash-ref topics topic)
-          '())) 
+          #t
+          #f))
     
     ; methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     
@@ -41,14 +41,23 @@
     
     ; unsubscribe from a topic
     ; topic is remover if no more subscribers
-    (define/public (unsubscribe suscriber topic) 
-      '())
+    (define/public (unsubscribe subscriber topic) 
+      (when (not (is-a? subscriber component%))
+        (error "databus:unsubscribe - subscriber shoud be a component"))
+      (when (hash-has-key? topics topic)
+          (let ((subscribers (hash-ref topics topic)))
+            (set! subscribers (remove subscriber subscribers))
+            (if (null? subscribers) 
+                (hash-remove! topics topic)
+                (hash-set! topics topic subscribers))))
+      )
     
     ; send a msg to subscribers of a particular topic
     (define/public (send-msg topic msg) 
       (when (hash-has-key? topics topic)
         (let ((subscribers (hash-ref topics topic)))
-          (map (lambda (component msg) (send component receive topic msg)) subscribers))))
+          (map (lambda (component) (send component receive topic msg)) 
+               subscribers))))
     
     
     ))

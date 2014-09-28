@@ -6,8 +6,8 @@
 (provide component-test-suite)
 
 ; component creation
-(define (component)
-  (new component% ))
+(define (component nid tid parent)
+  (new component% [the-nid nid] [the-tid tid] [the-parent parent]))
 
 
 ;; automata tests
