@@ -20,7 +20,7 @@
   
     ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; superclass initialization
-    (super-new [the-nid nid] [the-tid "noname"] [the-parent '()])                
+    (super-new [the-nid nid] [the-tid "noname"])                
     
     ; receive msg by databus
     (define (receive topic msg) 
