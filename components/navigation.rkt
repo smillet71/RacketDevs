@@ -12,14 +12,13 @@
   (class component% 
     
     ; initialization arguments ()
-    (init)                
+    (init nid tid)                
     
     ; fields ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     
-    
     ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; superclass initialization
-    (super-new)                
+    (super-new [the-nid nid] [the-tid tid])                
     
     ; methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     

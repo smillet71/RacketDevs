@@ -12,14 +12,17 @@
   (class component% 
     
     ; initialization arguments ()
-    (init)                
+    (init nid tid)                
     
     ; fields ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    
+    ; position 3d + attitudes (4d quaternion)
+    (define pose (make-vector 7 0))
+    ; velocity linear (3d) + angular (3d)
+    (define velocity (make-vector 6 0))
     
     ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; superclass initialization
-    (super-new)                
+    (super-new [the-nid nid] [the-tid tid])                
     
     ; methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     

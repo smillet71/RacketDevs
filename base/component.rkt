@@ -42,7 +42,7 @@
     ; should be used from update-to !!
     (define/public (get-topic topic)
       (if (hash-has-key? msg-queue-rd topic)
-          (hash-ref! msg-queue-rd topic)
+          (hash-ref msg-queue-rd topic)
           '()))
     
     ; set ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -82,7 +82,7 @@
       (semaphore-post tick-sema))
     
     (define/public (after-tick)
-      (hash-clear msg-queue-rd))
+      (hash-clear! msg-queue-rd))
     
     ; update to particular time
     (define/public (tick t)
