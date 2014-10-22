@@ -1,74 +1,58 @@
 #lang racket/gui
 
-(provide gui%)
+(provide create-gui create-canvas)
 
-; 
+; Basic frame creation
 (define gui%
   (class frame%
+    (super-new [label "test-gui"] 
+               ;[style (list 'no-caption 'no-system-menu)] 
+               [style (list 'no-resize-border)] 
+               [min-width 500] 
+               [min-height 500])
+    (define/augment (on-close) 
+      (let ((choice (get-choices-from-user "Exit application ?" "Do you confirm you want to quit the application ?" (list "Yes" "No"))))
+        (when (equal? choice '(0))
+          (exit))))))
+
+; frame creation and initial state
+(define (create-gui)
+  (let ((tw (new gui%)))
+    (send tw maximize #t)
+    (send tw show #t)
+    (send tw fullscreen #t)
+    tw))
+
+; Basic canvas creation 
+(define my-canvas%   
+  (class canvas% 
     
-    ;
-    (super-new [label "test-gui"] [style (list 'no-caption 'no-system-menu)] [min-width 500] [min-height 500])))
+    ; 
+    (init mouse-callback char-callback )
+    
+    ; 
+    (define the-mouse-callback mouse-callback)
+    (define the-char-callback char-callback)
+    
+    ; Define overriding method to handle mouse events     
+    (define/override (on-event event)       
+      (when (not (null? the-mouse-callback))
+        (the-mouse-callback event)))
+    
+    ; Define overriding method to handle keyboard events     
+    (define/override (on-char event)       
+      (when (not (null? the-char-callback))
+        (the-char-callback event)))
 
-;
-(define tw (new gui% ))
-(send tw maximize #t)
-(send tw show #t)
-(send tw fullscreen #t)
+    ; Call the superclass init, passing on all init args     
+    (super-new)))   
 
-;
-(define-values (width height) (send tw  get-client-size))
-(define h (* (floor (/ height 100.0)) 100.0))
-(define dh (floor (/ (- height h) 2)))
-
-;
-(define no-pen (new pen% [style 'transparent]))
-(define no-brush (new brush% [style 'transparent]))
-(define blue-brush (new brush% [color "blue"]))
-(define yellow-brush (new brush% [color "yellow"]))
-(define red-pen (new pen% [color "red"] [width 2]))
-
-(define i 100)
-(define j 50)
-
-(define (get-i) i)
-(define (get-j) j)
-
-(define tt '())
-
-;
-(define cv 
-  (new canvas% 
-       [parent tw]
-       [paint-callback
-        (lambda (canvas dc)
-          
-          (send dc set-smoothing 'aligned)
-          (send dc set-pen red-pen)
-          (send dc set-brush no-brush)
-          (for ([a (range 20)])
-            (for ([ b (range 20)])
-              (send dc draw-point (* a 50) (* b 50))))
-          (send dc draw-rectangle dh dh h h)
-          (send dc set-brush blue-brush)
-          (for ([x (range 5)])
-            (for ([ y (range 15)])
-              (send dc draw-rectangle 
-                    (+ (get-i) (* x 20))
-                    (+ (* y 50) (get-j)) 
-                    10 10))))
-            ])
-)
-
-(send cv  set-canvas-background [make-object color% "black"])
-
-
-(new timer%	 
-     [notify-callback 
-      (lambda () 
-        (set! i (+ 1 i))
-        (send cv refresh-now))
-      ]	 
-     [interval 50]	 
-     [just-once? #f])
-
-
+; canvas creation
+(define (create-canvas the-parent mousecb charcb paintcb)
+  (let ((canvas (new my-canvas% 
+                     [mouse-callback mousecb] 
+                     [char-callback charcb] 
+                     [parent the-parent]
+                     [paint-callback paintcb]
+                     )))
+    canvas))

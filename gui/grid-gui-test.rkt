@@ -2,6 +2,7 @@
 
 ;
 (require "../base/grid.rkt")
+(require "gui.rkt")
 (require "drawing-area.rkt")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -12,10 +13,7 @@
     (super-new [label "test-gui"] [style (list 'no-caption 'no-system-menu)] [min-width 500] [min-height 500])))
 
 ; frame creation and initial state
-(define tw (new gui%))
-(send tw maximize #t)
-(send tw show #t)
-(send tw fullscreen #t)
+(define tw (create-gui))
 (define-values (width height) (send tw  get-client-size))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -106,51 +104,40 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define my-canvas%   
-  (class canvas% 
-    ; The base class is canvas%     
-    ; Define overriding method to handle mouse events     
-    (define/override (on-event event)       
-      (when (send event button-down? 'left)
-        (printf "# click: ~a ~a ~n" (send event get-x) (send event get-y)))     
-      (when (send event dragging?)
-        (printf "# dragging: ~a ~a ~n" (send event get-x) (send event get-y))))     
-    ; Define overriding method to handle keyboard events     
-    (define/override (on-char event)       
-      '())
-    ; Call the superclass init, passing on all init args     
-    (super-new)))   
-
-; canvas drawing function
-(define cv 
-  (new my-canvas% 
-       [parent tw]
-       [paint-callback
-        (lambda (canvas dc)
-          (send dc set-scale 1 1)
-          ; set default pen and brushes
-          (send dc set-smoothing 'aligned)
-          (send dc set-pen red-pen)
-          (send dc set-brush no-brush)
-          ; draw all areas
-          (draw-area-list drawing-area-list dc)
-          )]))
-
-; 
-(send cv  set-canvas-background [make-object color% "black"])
+;
+(define (paint-canvas canvas dc)
+  (send dc set-scale 1 1)
+  ; set default pen and brushes
+  (send dc set-smoothing 'aligned)
+  (send dc set-pen red-pen)
+  (send dc set-brush no-brush)
+  ; draw all areas
+  (draw-area-list drawing-area-list dc))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define (on-mouse-event event)
+  '())
+
+(define (on-char-event event)
+  '())
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; canvas drawing function
+(define cv (create-canvas tw on-mouse-event on-char-event paint-canvas))
+(send cv  set-canvas-background [make-object color% "black"])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; 
 ;(new timer%	 
 ;     [notify-callback 
 ;      (lambda () 
-;        (set! i (+ 1 i))
 ;        (send cv refresh-now))
 ;      ]	 
-;     [interval 50]	 
+;     [interval 100]	 
 ;     [just-once? #f])
 
-;
+
 
