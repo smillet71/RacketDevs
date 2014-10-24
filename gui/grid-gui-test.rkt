@@ -32,7 +32,7 @@
   (let ((c (cell grid i j)))
     (if (= c 0)
         (send dc set-brush no-brush)
-        (send dc set-brush yellow-brush))
+        (send dc set-brush blue-brush))
     (send dc draw-rectangle (- x dcell2) (- y dcell2) dcell4 dcell4)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -75,7 +75,6 @@
 (define h1 (* (floor (/ (- height 10) 10.0)) 10.0))
 (define dh1 (floor (/ (- height h1) 2)))
 (define dp1 5)
-(define da1 (drawing-area dh1 dh1 h1 h1 dp1 dp1 draw-grid-area))
 (define dcell (floor (/ (- h1 (* 2 dp1)) ng)))
 (define dcell2 (floor (/ (- dcell 4) 2)))
 (define dcell4 (* dcell2 2))
@@ -86,23 +85,72 @@
 (define dw2 (+ h1 dp1 dp1 dp2))
 (define w2 (- width dw2))
 (define h2 50)
-(define da2 (drawing-area dw2 dh2 w2 h2 dp2 dp2 draw-status-area))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; grid definition
-(define grid (make-grid 1000))
-(cell-set! grid 10 15 11234)
-(cell-set! grid 1 1 11234)
+; grid definition*
+(define N 1000)
+(define grid (make-grid N))
 
 ; grid representation, position and number of represented rows/columns
-(define gx0 0)
-(define gy0 0)
+(define gx0 (quotient N 2))
+(define gy0 (quotient N 2))
 
-; drawing area list
-(define drawing-area-list (list da1 da2))
+; manage mouse dragging to create an area
+(define dgx0 0)
+(define dgy0 0)
+(define dgx1 1)
+(define dgy1 1)
+(define dragging #f)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (select-area x0 y0 x1 y1)
+  (for ([i (range x0 (+ 1 x1))])
+    (for ([j (range y0 (+ 1 y1))])
+      (cell-set! grid i j 1))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (grid-mouse-event event x y)
+  (let ((gx (inexact->exact (+ gx0 (quotient x dcell))))
+        (gy (inexact->exact (+ gy0 (quotient y dcell)))))
+    ; simple clic gauche
+    (when (send event button-down? 'left)
+      (if (> (cell grid gx gy) 0) 
+          (cell-set! grid gx gy 0)
+          (cell-set! grid gx gy 1)))
+    ; zone "dragging"
+    (if (send event dragging?)
+        (if (not dragging)
+            (begin
+              (set! dragging #t)
+              (set! dgx0 gx)
+              (set! dgy0 gy))
+            (begin
+              (set! dgx1 gx)
+              (set! dgy1 gy)))
+        (when dragging
+          (set! dragging #f)
+          (select-area dgx0 dgy0 dgx1 dgy1))))
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (grid-char-event event x y)
+  (let ((key (send event get-key-code)))
+    (cond
+      [(equal? key 'down) (when (<= gy0 (- N 2)) (set! gy0 (+ gy0 1)))]
+      [(equal? key 'up) (when (> gy0 0) (set! gy0 (- gy0 1)))]
+      [(equal? key 'left) (when (> gx0 0) (set! gx0 (- gx0 1)))]
+      [(equal? key 'right) (when (<= gx0 (- N 2)) (set! gx0 (+ gx0 1)))])
+    ))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+; drawing area list
+(define da1 (drawing-area "grid" dh1 dh1 h1 h1 dp1 dp1 draw-grid-area grid-mouse-event grid-char-event))
+(define da2 (drawing-area "status" dw2 dh2 w2 h2 dp2 dp2 draw-status-area '() '()))
+(set-drawing-area-list (list da1 da2))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 ;
 (define (paint-canvas canvas dc)
@@ -112,32 +160,24 @@
   (send dc set-pen red-pen)
   (send dc set-brush no-brush)
   ; draw all areas
-  (draw-area-list drawing-area-list dc))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define (on-mouse-event event)
-  '())
-
-(define (on-char-event event)
-  '())
+  (draw-area-list dc))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; canvas drawing function
-(define cv (create-canvas tw on-mouse-event on-char-event paint-canvas))
+(define cv (create-canvas tw drawing-area-on-mouse-event drawing-area-on-char-event paint-canvas))
 (send cv  set-canvas-background [make-object color% "black"])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; 
-;(new timer%	 
-;     [notify-callback 
-;      (lambda () 
-;        (send cv refresh-now))
-;      ]	 
-;     [interval 100]	 
-;     [just-once? #f])
+(new timer%	 
+     [notify-callback 
+      (lambda () 
+        (send cv refresh-now))
+      ]	 
+     [interval 100]	 
+     [just-once? #f])
 
 
 
