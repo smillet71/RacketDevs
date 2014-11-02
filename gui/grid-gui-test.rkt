@@ -71,11 +71,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; grid drawing area definition
-(define ng 30)
-(define h1 (* (floor (/ (- height 10) 10.0)) 10.0))
-(define dh1 (floor (/ (- height h1) 2)))
+(define cell-size 32)
+(define ng (floor (- (quotient (- height 10) cell-size) 1)))
+(define h1 (+ 10 (* cell-size ng)))
+(define dh1 5)
 (define dp1 5)
-(define dcell (floor (/ (- h1 (* 2 dp1)) ng)))
+(define dcell cell-size)
 (define dcell2 (floor (/ (- dcell 4) 2)))
 (define dcell4 (* dcell2 2))
 
