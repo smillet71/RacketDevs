@@ -7,11 +7,21 @@
          world%)
 
 ;; ------------------------------------------
+;; distance from pos1 to pos2
 (define (pos-dist pos1 pos2)
   (let* ([ v0 (array- pos1 pos2)]
          [ v1 (array-sqr v0)]
          [ d (sqrt (array-all-sum v1)) ] )
     d))
+;; ------------------------------------------
+;; angle of vector pos2-pos1
+(define (pos-azimuth-rad pos1 pos2)
+  (let* ([ v (array- pos2 pos1)]
+         [ a (atan (array-ref v #(1)) (array-ref v #(0))) ])
+    a))
+;; ------------------------------------------
+(define (rad2deg x)
+  (* (/ x pi) 180.0))
 ;; ------------------------------------------
 ;; position, attitudes et vitesse d'un objet
 ;; ------------------------------------------
@@ -52,7 +62,7 @@
     (super-new)
     (init-field [x 0.01] [y 0.01] [z 0.01])
     ; accessors
-    (define/public (box) (array #[ x y z ] ))))
+    (define/public (box) (array #[ x y z ]))))
 
 ;; ------------------------------------------
 ;; definition of an entity sensor 
@@ -149,13 +159,17 @@
     (field [last-update -1]
            [distance 0]
            [azimut-12 0]
-           [azimut-21 0])
+           [azimut-21 0]
+           [azimut-12-rl 0]
+           [azimut-21-rl 0])
 
     ; accessors
     (define/public (last-update-time-s) last-update)
     (define/public (distance-km) distance)
     (define/public (azimut12-deg) azimut-12)
     (define/public (azimut21-deg) azimut-21)
+    (define/public (azimut12-rl-deg) azimut-12-rl)
+    (define/public (azimut21-rl-deg) azimut-21-rl)
 
     ; update
     (define/public (update e1 e2 the-time)
@@ -163,14 +177,19 @@
         (let* ([wpos1 (send e1 position )]
                [pos1 (send wpos1 position )]
                [att1 (send wpos1 attitudes )]
+               [route1 (array-ref att1 #(0))]
                [spd1 (send wpos1 speed )]
                [wpos2 (send e2 position )]
                [pos2 (send wpos2 position )]
                [att2 (send wpos2 attitudes )]
+               [route2 (array-ref att2 #(0))]
                [spd2 (send wpos2 speed )])
-          (set! distance (pos-dist pos1 pos2)))
-               
-        '()))
+          (set! distance (pos-dist pos1 pos2))
+          (set! azimut12-deg (rad2deg (pos-azimuth-rad pos1 pos2)))
+          (set! azimut21-deg (rad2deg (pos-azimuth-rad pos1 pos2))) ; ou azimut12 - 180°
+          (set! azimut-12-rl (- azimut12-deg (rad2deg rout1)))
+          (set! azimut-21-rl (- azimut21-deg (rad2deg rout2)))
+        )))
     ))
 
 ;; ------------------------------------------
