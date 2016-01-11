@@ -109,6 +109,7 @@
     (define/public (hasWeapons) has-weapons)
     (define/public (canMove) can-move)
     (define/public (isDetectable) is-detectable)
+    (define/public (last-time) t)
     
     ;; add this object to the world 
     (define/public (add-to-world)
@@ -185,10 +186,10 @@
                [route2 (array-ref att2 #(0))]
                [spd2 (send wpos2 speed )])
           (set! distance (pos-dist pos1 pos2))
-          (set! azimut12-deg (rad2deg (pos-azimuth-rad pos1 pos2)))
-          (set! azimut21-deg (rad2deg (pos-azimuth-rad pos1 pos2))) ; ou azimut12 - 180°
-          (set! azimut-12-rl (- azimut12-deg (rad2deg rout1)))
-          (set! azimut-21-rl (- azimut21-deg (rad2deg rout2)))
+          (set! azimut-12 (rad2deg (pos-azimuth-rad pos1 pos2)))
+          (set! azimut-21 (rad2deg (pos-azimuth-rad pos1 pos2))) ; ou azimut12 - 180°
+          (set! azimut-12-rl (- azimut-12 (rad2deg route1)))
+          (set! azimut-21-rl (- azimut-21 (rad2deg route2)))
         )))
     ))
 
