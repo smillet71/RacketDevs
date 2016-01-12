@@ -7,6 +7,12 @@
          world%)
 
 ;; ------------------------------------------
+;; norm of a vector
+(define (norm v0)
+  (let* ([ v1 (array-sqr v0)]
+         [ d (sqrt (array-all-sum v1)) ] )
+    d))
+;; ------------------------------------------
 ;; distance from pos1 to pos2
 (define (pos-dist pos1 pos2)
   (let* ([ v0 (array- pos1 pos2)]
@@ -67,11 +73,41 @@
 ;; ------------------------------------------
 ;; definition of an entity sensor 
 ;; ------------------------------------------
-(define sensor%
+(define entity-sensor%
   (class object%
     ; initialization
     (super-new)
-    (init-field entity)
+    (init-field entity        ; entity owning this sensor
+                range         ; range for detection something which would have a signature of 1
+                refresh-rate  ; refresh rate of information
+                )
+    ; detect something ?
+    ))
+
+;; ------------------------------------------
+;; definition of an entity movement 
+;; ------------------------------------------
+(define entity-mover%
+  (class object%
+    ; initialization
+    (super-new)
+    (init-field entity          ; entity owning this mover
+                max-forces      ; max forces which can be applied on x,y,z axis
+                )
+    ; update position
+    (define/public (move dt forces drag-coeff)
+      (let ([current-pos (send (send entity position) position)]
+            [current-speed (send (send entity position) speed)]
+            [current-att (send (send entity position) attitudes)]
+            [mass (send (send entity position) mass)])
+        (let* ([norm-current-speed (norm current-speed)] ; ||v||
+               [drag (* drag-coeff (sqr norm-current-speed))] ; c * ||v||^2
+               [drag-vector (array-scale current-speed (- (/ drag (norm-current-speed)))) ]   ; D = -coeff*v/||v|| 
+               [all-forces (array+ forces drag-vector)] ; SF = F + D
+               [new-accel  (array-scale all-forces (/ 1.0 mass))]   ; a = SF / m
+               [new-spd (array+ current-speed (array-scale new-accel dt))]     ; v = v0 + a*dt
+               [new-pos (array+ current-pos (array-scale current-speed dt) (array-scale new-accel (/ (sqr dt) 2.0))) ])    ; p = p0 + dt*v0 + 0.5 * a * dt^2
+          '())))
     ))
 ;; ------------------------------------------
 ;; definition of an object living in the simulated world
