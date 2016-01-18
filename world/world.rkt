@@ -45,18 +45,18 @@
     (define/public (mass) m)
     (define/public (speed) (array #[ vx vy vz ] ))
     ; setters
-    (define/public (set-position nx ny nz)
-      (set! x nx)
-      (set! y ny)
-      (set! z nz))
-    (define/public (set-speed nvx nvy nvz)
-      (set! vx nvx)
-      (set! vy nvy)
-      (set! vz nvz))
-    (define/public (set-attitudes npsi ntheta nphi)
-      (set! psi npsi)
-      (set! theta ntheta)
-      (set! phi nphi))
+    (define/public (set-position ap)
+      (set! x (array-ref ap #(0)))
+      (set! y (array-ref ap #(1)))
+      (set! z (array-ref ap #(2))))
+    (define/public (set-speed ap)
+      (set! vx (array-ref ap #(0)))
+      (set! vy (array-ref ap #(1)))
+      (set! vz (array-ref ap #(2))))
+    (define/public (set-attitudes ap)
+      (set! psi (array-ref ap #(0)))
+      (set! theta (array-ref ap #(1)))
+      (set! phi (array-ref ap #(1))))
     ))
 
 ;; ------------------------------------------
@@ -89,25 +89,29 @@
 ;; ------------------------------------------
 (define entity-mover%
   (class object%
+    
     ; initialization
     (super-new)
-    (init-field entity          ; entity owning this mover
-                max-forces      ; max forces which can be applied on x,y,z axis
-                )
+    (init-field entity)          ; entity owning this mover
+                
     ; update position
     (define/public (move dt forces drag-coeff)
-      (let ([current-pos (send (send entity position) position)]
-            [current-speed (send (send entity position) speed)]
-            [current-att (send (send entity position) attitudes)]
-            [mass (send (send entity position) mass)])
+      (let* ([eposition (send entity position)]
+             [current-pos (send eposition position)]
+             [current-speed (send eposition speed)]
+             [mass (send eposition mass)])
         (let* ([norm-current-speed (norm current-speed)] ; ||v||
                [drag (* drag-coeff (sqr norm-current-speed))] ; c * ||v||^2
                [drag-vector (array-scale current-speed (- (/ drag (norm-current-speed)))) ]   ; D = -coeff*v/||v|| 
                [all-forces (array+ forces drag-vector)] ; SF = F + D
-               [new-accel  (array-scale all-forces (/ 1.0 mass))]   ; a = SF / m
+               [new-accel (array-scale all-forces (/ 1 mass))] ; a = SF/m
                [new-spd (array+ current-speed (array-scale new-accel dt))]     ; v = v0 + a*dt
-               [new-pos (array+ current-pos (array-scale current-speed dt) (array-scale new-accel (/ (sqr dt) 2.0))) ])    ; p = p0 + dt*v0 + 0.5 * a * dt^2
-          '())))
+               [new-pos (array+ current-pos (array-scale current-speed dt) (array-scale new-accel (/ (sqr dt) 2.0))) ]    ; p = p0 + dt*v0 + 0.5 * a * dt^2
+               [new-att (array #[ (atan (array-ref new-spd #(0)) (array-ref new-spd #(0))) 0.0 0.0 ])])
+          (send eposition set-position new-pos)
+          (send eposition set-speed new-spd)
+          (send eposition set-attitudes new-att))))
+    
     ))
 ;; ------------------------------------------
 ;; definition of an object living in the simulated world
@@ -121,7 +125,7 @@
            [ eid 0 ] ; entity state id
            [ estate 'init ]) ; entity state, 'init 'run 'end
     
-    ;
+    ; declare fields
     (field [has-sensors #f]
            [has-weapons #f]
            [is-detectable #f]
@@ -130,7 +134,7 @@
            [weapons '()]
            [signatures '()])
 
-    ;
+    ; add this entity to the world upon construction
     (add-to-world)
     
     ; accessors
@@ -306,7 +310,7 @@
       (update-interaction-matrix (time))
       (for ([key (hash-keys entities)])
         (let ([entity (hash-ref! entities key '())])
-          (send entity update wt deltaT))))
+          (send entity update (time) deltaT))))
     
     ))
 
