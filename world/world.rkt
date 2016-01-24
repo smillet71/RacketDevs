@@ -3,6 +3,7 @@
 
 (provide world-position%
          entity-bounding-box%
+         entity-mover%
          entity%
          world%)
 
@@ -56,7 +57,7 @@
     (define/public (set-attitudes ap)
       (set! psi (array-ref ap #(0)))
       (set! theta (array-ref ap #(1)))
-      (set! phi (array-ref ap #(1))))
+      (set! phi (array-ref ap #(2))))
     ))
 
 ;; ------------------------------------------
@@ -102,7 +103,9 @@
              [mass (send eposition mass)])
         (let* ([norm-current-speed (norm current-speed)] ; ||v||
                [drag (* drag-coeff (sqr norm-current-speed))] ; c * ||v||^2
-               [drag-vector (array-scale current-speed (- (/ drag (norm-current-speed)))) ]   ; D = -coeff*v/||v|| 
+               [drag-vector (array-scale current-speed (if (> norm-current-speed 0.0)
+                                                           (- (/ drag norm-current-speed))
+                                                           1.0)) ]   ; D = -coeff*v/||v||
                [all-forces (array+ forces drag-vector)] ; SF = F + D
                [new-accel (array-scale all-forces (/ 1 mass))] ; a = SF/m
                [new-spd (array+ current-speed (array-scale new-accel dt))]     ; v = v0 + a*dt
@@ -288,12 +291,10 @@
                            id1
                            (lambda () interaction12 ))])
         (send interaction12 update e1 e2 the-time)  
-        (print (list the-time id1 id2 interaction12))))
+        ))
     
     ; initialize all simulated objects
     (define/public (init)
-      ;
-      (writeln (hash-count entities))
       ;
       (for ([key (hash-keys entities)])
         (let ([entity (hash-ref! entities key '())])
